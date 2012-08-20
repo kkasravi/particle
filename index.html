@@ -1,0 +1,25 @@
+<html>
+<head>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Particle test</title>
+  <style type="text/css" media="screen">
+  </style>
+</head>
+<body>
+<script type='text/javascript' src='../require/lib/require.js'></script>
+<script type='text/javascript'>
+  window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       || 
+              window.webkitRequestAnimationFrame || 
+              window.mozRequestAnimationFrame    || 
+              window.oRequestAnimationFrame      || 
+              window.msRequestAnimationFrame     || 
+              function( callback ){
+                window.setTimeout(callback, 17);
+              };
+  })();
+  require('loader').Loader({ws:'ws://'+location.hostname+':81/',http:location.origin,modules:['../monads/lib/utilities','../monads/lib/monads','../particle/lib/particle','../particle/test/test1']});
+</script>
+</body>
+</html>
