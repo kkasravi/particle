@@ -107,7 +107,7 @@ module particle {
     }
   }
   export class Particles {
-    constructor(properties={canvas:canvas,background:background}) {
+    constructor(properties={canvas:canvas,background:background,image:image}) {
       private background, canvas, context, count, image, lastRender, smokeRight, smokeLeft, dirtyLeft, dirtyRight, dirtyBottom, dirtyTop, windVelocity;
       @canvas = properties.canvas;
       @lastRender = new Date().getTime();
@@ -122,7 +122,7 @@ module particle {
       @onbackgroundload = @onbackgroundload.bind(this);
       @image = new Image();  
       @image.onload = @onload;
-      @image.src = 'img/puffBlack.png';
+      @image.src = properties.image || 'img/puffBlack.png';
       if (@canvas.getContext) {
         @context = @canvas.getContext('2d');
       }
