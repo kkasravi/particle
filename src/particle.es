@@ -153,7 +153,7 @@ module particle {
         @canvas.style.top = yImage + "px";
         @smokeRight = ParticleEmitter({xScale:0.9,yScale:0.531,particles:20,image:@image,alpha:1.0,windVelocity:@windVelocity});
         @smokeLeft = ParticleEmitter({xScale:0.322,yScale:0.453,particles:30,image:@image,alpha:0.3,windVelocity:@windVelocity});
-        requestAnimFrame(@render);
+        requestAnimationFrame(@render);
     }
     onload() {
     }
@@ -177,7 +177,7 @@ module particle {
       if (@windVelocity < 0.0) {
         @windVelocity = 0.0;
       }
-      requestAnimFrame(@render);  
+      requestAnimationFrame(@render);  
     }
     static CANVAS_WIDTH = 960;
     static CANVAS_HEIGHT = 640;
