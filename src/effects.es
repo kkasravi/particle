@@ -278,6 +278,125 @@ module effects {
       @active = true;
     }
   };
+  export class Steam extends Effect {
+    constructor(properties={x:0,y:0,color:0}) {
+      Effect.call(this);
+      @attenuationType = Effect.ATTENUATION.GROW;
+      @attenuationStart = 1.5;
+      @attenuationSpeed = 1;
+      @backgroundColor = "rgb(0,0,0)";
+      @clearColor = "rgba(0,0,0,1)";
+      @clearFree = true;
+      @clearTouch = true;
+      @colorifyType = Effect.PATTERN.SOLID;
+      @fingerSize = 3;
+      @globalAlphaFree = 0.1;
+      @globalAlphaTouch = 0.1;
+      @globalCompositeOperationClear = "source-over";
+      @globalCompositeOperationFree = "source-over";
+      @globalCompositeOperationTouch = "lighter";
+      @gravity = 0;
+      @gravityEnabled = false;
+      @images = ["/particle/img/snowflake7_alpha.png"];
+      @lifeMin = 1;
+      @lifeMultiplierFree = 7;
+      @lifeRange = 3;
+      @lineWidth = 0;
+      @palette = [
+        "rgba( 255, 255, 255, 0.15 )",
+        "rgba( 80, 155, 255, 0.15 )",
+        "rgba( 255, 175, 125, 0.15 )",
+        "rgba( 255, 100, 100, 0.15 )",
+        "rgba( 180, 180, 255, 0.15 )",
+        "rgba( 255, 0, 255, 0.15 )",
+        "rgba( 255, 125, 0, 0.15 )",
+        "rgba( 0, 125, 255, 0.15 )",
+        "rgba( 255, 0, 125, 0.15 )",
+        "rgba( 255, 125, 125, 0.15 )"
+      ];
+      @particleSize = 3;
+      @particleType = Effect.PARTICLE.SPRITE;
+      @radialDistributionType = Effect.DISTRIBUTION.FULL;
+      @randomX = 140;
+      @randomY = 140;
+      @spawnRate = 1;
+      @spawnThreshold = 0;
+      @speedX = 80;
+      @speedY = 80;
+      @spriteOffsetX = 0;
+      @spriteOffsetY = 0;
+      @spriteRotation = true;
+      @spriteRotationSpeed = 0.5;
+      @timedTurns = true;
+      @life = @lifeMin + @lifeRange * Math.random();
+      @totalLife = @life;
+      @color = properties.color;
+      @angle = Math.PI;
+      @x = properties.x + @fingerSize * Math.sin(@angle);
+      @y = properties.y + @fingerSize * Math.cos(@angle);
+      @oldX = @x;
+      @oldY = @y;
+      @dx = @speedX * Math.sin(@angle);
+      @dy = @speedY * Math.cos(@angle);
+      @prepareSprites();
+    }
+    render(ctx) {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = @globalAlphaTouch;
+      ctx.lineWidth = @lineWidth;
+      var lifeRatio = 1;
+      lifeRatio = 1 - @life / @totalLife;
+      lifeRatio = @attenuationStart + @attenuationSpeed * lifeRatio;
+      var sprite = @sprites[@color];
+      if(!sprite.initialized) {
+        return;
+      }
+      var attenuatedWidth = Math.round(lifeRatio * sprite.width);
+      var attenuatedHeight = Math.round(lifeRatio * sprite.height);
+      if(attenuatedWidth < 1 || attenuatedHeight < 1) {
+        @life = 0;
+        return;
+      }
+      var tiny = false;
+      if (attenuatedWidth < 3 || attenuatedHeight < 3) {
+        tiny = true;
+      }
+      var x = -0.5 * attenuatedWidth + @spriteOffsetX;
+      var y = -0.5 * attenuatedHeight + @spriteOffsetY;
+      if (@spriteRotation && !tiny ) {
+        var rotation = @spriteRotationSpeed * @elapsedCounter;
+        ctx.save();
+        ctx.translate(@x, @y);
+        ctx.rotate(rotation);
+      } else {
+        x += @x;
+        y += @y;
+      }
+      if(@attenuationType) {
+        ctx.drawImage(sprite, x, y, attenuatedWidth, attenuatedHeight);
+      } else {
+        ctx.drawImage(sprite, x, y);
+      }
+      if (@spriteRotation && !tiny) {
+        ctx.restore();
+      }
+    }
+    update(props) {
+      @life = @lifeMin + @lifeRange * Math.random();
+      @totalLife = @life;
+      @angle = Math.random() * Effect.PI2;
+      var nx = @fingerSize * Math.sin(@angle);
+      var ny = @fingerSize * Math.cos(@angle);
+      @x = props.x + nx;
+      @y = props.y + ny;
+      @oldX = @x;
+      @oldY = @y;
+      @dx = @speedX * nx / @fingerSize;
+      @dy = @speedY * ny / @fingerSize;
+      @color = props.color;
+      @active = true;
+    }
+  };
   export class Galaxy extends Effect {
     constructor(properties={x:0,y:0,color:0}) {
       Effect.call(this);
@@ -297,7 +416,7 @@ module effects {
       @globalCompositeOperationTouch = "lighter";
       @gravity = 0;
       @gravityEnabled = false;
-      @images = ["img/spikey.png"];
+      @images = ["/particle/img/spikey.png"];
       @lifeMin = 1;
       @lifeMultiplierFree = 5;
       @lifeRange = 2;
@@ -417,7 +536,7 @@ module effects {
     }
     reset() {
       for (var i = 0; i < Generator.MAX_PARTICLES; i++) {
-        @PARTICLES[i] = Fir();
+        @PARTICLES[i] = Steam();
         @TOUCHES = [];
         @FREE_INDICES[i] = i;
         @FREE_INDICES_TOP = i;
@@ -488,6 +607,19 @@ module effects {
           particle.elapsedCounter += delta;
           particle.oldX = particle.x;
           particle.oldY = particle.y;
+          if(particle.timedTurns) {
+            if(particle.turnCounter > particle.turnTime) {
+              var rnd = Math.random();
+              var angle = particle.angle + Effect.PIHALF * ( rnd > 0.333 ? ( rnd > 0.666 ? -1 : 0 ) : 1 );
+              var nx = particle.fingerSize * Math.sin( angle );
+              var ny = particle.fingerSize * Math.cos( angle );
+              particle.dx = particle.speedX * nx / particle.fingerSize;
+              particle.dy = particle.sppedY * ny / particle.fingerSize;
+              particle.angle = angle;
+              particle.turnCounter = 0;
+              particle.turnTime = particle.life * 0.25 + 0.125;
+            }
+          }
           particle.x += delta * (particle.dx + (0.5 - Math.random()) * particle.randomX);
           particle.y += delta * (particle.dy + (0.5 - Math.random()) * particle.randomY);
           if (particle.life <= 0 ){
