@@ -54,7 +54,7 @@ module effects {
           sprite.initialized = false;
           @constructor.prototype.sprites[j] = sprite;
         }
-        if(@colorifyType === Effect.PATTERN.MASK && mask !== undefined ) {
+        if(@colorifyType === Effect.PATTERN.MASK && mask !== undefined) {
           var maskImage = new Image();
           maskImage.onload = @generateGenerator(maskImage);
           maskImage.src = mask;
@@ -227,7 +227,7 @@ module effects {
       ];
       @particleSize = 4;
       @particleType = Effect.PARTICLE.LINE;
-      @radialDistributionType = Effect.PARTICLE.TRAIL;
+      @radialDistributionType = Effect.DISTRIBUTION.TRAIL;
       @randomX = 50;
       @randomY = 50;
       @spawnRate = 6;
@@ -251,7 +251,9 @@ module effects {
       @dy = @speedY * Math.cos(@angle);
     }
     render(ctx) {
-//log.Logger.debug(this,'palette[color]='+@palette[@color]+' oldX='+@oldX+' oldY='+@oldY+' x='+@x+' y='+@y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = @lineWidth;
       ctx.strokeStyle = @palette[@color];
       ctx.beginPath();
       ctx.moveTo(@oldX, @oldY);
@@ -288,8 +290,8 @@ module effects {
       @clearTouch = true;
       @colorifyType = Effect.PATTERN.SOLID;
       @fingerSize = 5;
-      @globalAlphaFree = 1.0;
-      @globalAlphaTouch = 1.0;
+      @globalAlphaFree = 1;
+      @globalAlphaTouch = 1;
       @globalCompositeOperationClear = "source-over";
       @globalCompositeOperationFree = "source-over";
       @globalCompositeOperationTouch = "lighter";
@@ -314,7 +316,7 @@ module effects {
       ];
       @particleSize = 3;
       @particleType = Effect.PARTICLE.SPRITE;
-      @radialDistributionType = Effect.PARTICLE.FULL;
+      @radialDistributionType = Effect.DISTRIBUTION.FULL;
       @randomX = 60;
       @randomY = 60;
       @spawnRate = 2;
@@ -329,7 +331,7 @@ module effects {
       @life = @lifeMin + @lifeRange * Math.random();
       @totalLife = @life;
       @color = properties.color;
-      @angle = Math.PI;
+      @angle = Math.random() * Effect.PI2;
       @x = properties.x + @fingerSize * Math.sin(@angle);
       @y = properties.y + @fingerSize * Math.cos(@angle);
       @oldX = @x;
@@ -339,21 +341,24 @@ module effects {
       @prepareSprites();
     }
     render(ctx) {
-      var lr = 1;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = @lineWidth;
+      var lifeRatio = 1;
       lifeRatio = @life / @totalLife;
-      lifeRatio = @attenuationStart + @attenuationSpeed * Math.pow( lr, 4);
-      var sprite = @sprites[ @color ];
+      lifeRatio = @attenuationStart + @attenuationSpeed * (lifeRatio*lifeRatio*lifeRatio*lifeRatio);
+      var sprite = @sprites[@color];
       if(!sprite.initialized) {
         return;
       }
-      var attenuatedWidth = Math.round( lifeRatio * sprite.width );
-      var attenuatedHeight = Math.round( lifeRatio * sprite.height );
+      var attenuatedWidth = Math.round(lifeRatio * sprite.width);
+      var attenuatedHeight = Math.round(lifeRatio * sprite.height);
       if(attenuatedWidth < 1 || attenuatedHeight < 1) {
         @life = 0;
         return;
       }
       var tiny = false;
-      if ( attenuatedWidth < 3 || attenuatedHeight < 3 ) {
+      if (attenuatedWidth < 3 || attenuatedHeight < 3) {
         tiny = true;
       }
       var x = -0.5 * attenuatedWidth + @spriteOffsetX;
@@ -361,18 +366,18 @@ module effects {
       if (@spriteRotation && !tiny ) {
         var rotation = @spriteRotationSpeed * @elapsedCounter;
         ctx.save();
-        ctx.translate( @x, @y );
-        ctx.rotate( rotation );
+        ctx.translate(@x, @y);
+        ctx.rotate(rotation);
       } else {
         x += @x;
         y += @y;
       }
-      if (@attenuationType) {
-        ctx.drawImage(sprite, x, y, attenuatedWidth, attenuatedHeight );
+      if(@attenuationType) {
+        ctx.drawImage(sprite, x, y, attenuatedWidth, attenuatedHeight);
       } else {
-        ctx.drawImage(sprite, x, y );
+        ctx.drawImage(sprite, x, y);
       }
-      if ( @spriteRotation && !tiny ) {
+      if (@spriteRotation && !tiny) {
         ctx.restore();
       }
     }
@@ -380,22 +385,25 @@ module effects {
       @life = @lifeMin + @lifeRange * Math.random();
       @totalLife = @life;
       @angle = Math.random() * Effect.PI2;
-      @x = props.x + @fingerSize * Math.sin(@angle);
-      @y = props.y + @fingerSize * Math.cos(@angle);
+      var nx = @fingerSize * Math.sin(@angle);
+      var ny = @fingerSize * Math.cos(@angle);
+      @x = props.x + nx;
+      @y = props.y + ny;
       @oldX = @x;
       @oldY = @y;
-      @dx = @speedX * Math.sin(@angle);
-      @dy = @speedY * Math.cos(@angle);
+      @dx = @speedX * nx / @fingerSize;
+      @dy = @speedY * ny / @fingerSize;
       @color = props.color;
       @active = true;
     }
   };
   export class Generator {
     constructor(properties={}) {
-      private CTX, FREE_INDICES, FREE_INDICES_TOP, LIFE_MULTIPLIER, OLD_TIME, OLD_TOUCHES, PARTICLES, STATE, TOUCHES, UPDATE_STARTED;
+      private clear, CTX, FREE_INDICES, FREE_INDICES_TOP, LIFE_MULTIPLIER, OLD_TIME, OLD_TOUCHES, PARTICLES, STATE, TOUCHES, UPDATE_STARTED;
       @update = @update.bind(this);
       @reset = @reset.bind(this);
       @onmove = @onmove.bind(this);
+      @clear = false;
       @UPDATE_STARTED = false;
       @LIFE_MULTIPLIER = 1;
       @FREE_INDICES = [];
@@ -409,17 +417,23 @@ module effects {
     }
     reset() {
       for (var i = 0; i < Generator.MAX_PARTICLES; i++) {
-        @PARTICLES[i] = Galaxy();
+        @PARTICLES[i] = Fir();
         @TOUCHES = [];
         @FREE_INDICES[i] = i;
         @FREE_INDICES_TOP = i;
       }
+      @clear = @PARTICLES[0].clearTouch;
     }
     onmove(event) {
       event.preventDefault();
       @TOUCHES = event.touches;
     }
     render() {
+      if(@clear) {
+        @CTX.globalCompositeOperation = "source-over";
+        @CTX.fillStyle = "rgba(0,0,0,1)";
+        @CTX.fillRect( 0, 0, window.innerWidth, window.innerHeight);
+      }
       for (var i = 0; i < Generator.MAX_PARTICLES; i++) {
         var particle = @PARTICLES[i];
         if(particle.active && particle.life > 0 && particle.x > 0 && particle.y > 0 && particle.x < window.innerWidth && particle.y < window.innerHeight) {
