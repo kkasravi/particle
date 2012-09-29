@@ -239,8 +239,6 @@ module effects {
       @spriteRotation = false;
       @spriteRotationSpeed = 0;
       @timedTurns = false;
-      @life = @lifeMin + @lifeRange * Math.random();
-      @totalLife = @life;
       @color = properties.color;
       @angle = Math.PI;
       @x = properties.x + @fingerSize * Math.sin(@angle);
@@ -328,8 +326,6 @@ module effects {
       @spriteRotation = true;
       @spriteRotationSpeed = 0.5;
       @timedTurns = true;
-      @life = @lifeMin + @lifeRange * Math.random();
-      @totalLife = @life;
       @color = properties.color;
       @angle = Math.PI;
       @x = properties.x + @fingerSize * Math.sin(@angle);
@@ -447,8 +443,6 @@ module effects {
       @spriteRotation = true;
       @spriteRotationSpeed = 5;
       @timedTurns = false;
-      @life = @lifeMin + @lifeRange * Math.random();
-      @totalLife = @life;
       @color = properties.color;
       @angle = Math.random() * Effect.PI2;
       @x = properties.x + @fingerSize * Math.sin(@angle);
@@ -536,7 +530,7 @@ module effects {
     }
     reset() {
       for (var i = 0; i < Generator.MAX_PARTICLES; i++) {
-        @PARTICLES[i] = Steam();
+        @PARTICLES[i] = Galaxy();
         @TOUCHES = [];
         @FREE_INDICES[i] = i;
         @FREE_INDICES_TOP = i;
@@ -594,7 +588,7 @@ module effects {
         if (@FREE_INDICES_TOP >= 0) {
           particle = @PARTICLES[@FREE_INDICES[@FREE_INDICES_TOP]];
           for (var j = 0; j < particle.spawnRate; j++) {
-            @FREE_INDICES_TOP--;
+            @FREE_INDICES_TOP -= 1;
             particle.update({x:px,y:py,dx:dx,dy:dy,color:index});
           }
         }
