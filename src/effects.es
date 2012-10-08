@@ -399,7 +399,8 @@ module effects {
       @attenuationType = Effect.ATTENUATION.SHRINK;
       @attenuationStart = 0.05;
       @attenuationSpeed = 1.27;
-      @backgroundColor = "rgb(0,0,0)";
+//      @backgroundColor = "rgb(0,0,0)";
+      @backgroundColor = "white";
       @clearColor = "rgba(0,0,0,1)";
       @clearFree = true;
       @clearTouch = true;
@@ -524,7 +525,7 @@ module effects {
       @PARTICLES = [];
       @OLD_TOUCHES = [];
       @OLD_TIME = Date.now();
-      @CTX = monads.DOMable({tagName:'canvas'}).on('load').attributes({id:'canvas',width:window.innerWidth,height:window.innerHeight}).style({left:"0px",top:"0px",width:window.innerWidth+"px",height:window.innerHeight+'px',position:'absolute',backgroundColor:'black'}).insert(document.body).on(['touchmove'],@onmove).on(['touchend'],@reset).element().getContext('2d');
+      @CTX = monads.DOMable({tagName:'canvas'}).on('load').attributes({id:'canvas',width:window.innerWidth,height:window.innerHeight}).style({left:"0px",top:"0px",width:window.innerWidth+"px",height:window.innerHeight+'px',position:'absolute','background-color':'transparent'}).insert(document.body).on(['touchmove'],@onmove).on(['touchend'],@reset).element().getContext('2d');
       @reset();
       requestAnimationFrame(@update);
     }
